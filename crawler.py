@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Foundations of Python Network Programming, Third Edition
-# https://github.com/brandon-rhodes/fopnp/blob/m/py3/chapter11/rscrape1.py
-# Recursive scraper built using the Requests library.
+# https://github.com/chenuin/ND_hw3/blob/master/crawler.py
+# Extract the email addresses from all the web pages reachable from that web site
 
 import argparse, requests
 import urllib.request,re
@@ -23,9 +23,10 @@ def GET(url):
     for link in links:
         yield GET, urljoin(url, link.attrib['href'])
 
-def scrape(start, url_filter):
+def scrape(start, url_filter, numEXECUTE):
     further_work = {start}
     already_seen = {start}
+    time = 0
     while further_work:
         call_tuple = further_work.pop()
         function, url, *etc = call_tuple
@@ -35,8 +36,10 @@ def scrape(start, url_filter):
             tmp = str.encode(url)
             f = urllib.request.urlopen(url)
             s = f.read()
+            mail = []
             mail = re.findall(b"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}",s)
-            print (mail)
+            print(*mail, sep='\n')
+			
         except Exception as e:
             print('    {}: {}'.format(e.__class__.__name__, e))
 
@@ -49,16 +52,21 @@ def scrape(start, url_filter):
             if not url_filter(url):
                 continue
             further_work.add(call_tuple)
-        exit()
-
+        time = time + 1
+        #print (numEXECUTE)
+        if time > numEXECUTE:
+            exit()
 
 def main(GET):
     parser = argparse.ArgumentParser(description='Scrape a simple site.')
     parser.add_argument('url', help='the URL at which to begin')
+    parser.add_argument("-n", "--number", type=int, help="the number of reachable website", default=15)
+    numEXECUTE = parser.parse_args().number
+    #print (numEXECUTE)
     start_url = parser.parse_args().url
     starting_netloc = urlsplit(start_url).netloc
     url_filter = (lambda url: urlsplit(url).netloc == starting_netloc)
-    scrape((GET, start_url), url_filter)
+    scrape((GET, start_url), url_filter, numEXECUTE)
 
 if __name__ == '__main__':
     main(GET)
